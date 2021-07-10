@@ -10,14 +10,14 @@ CLASS y_argparser_test DEFINITION
   PROTECTED SECTION.
   PRIVATE SECTION.
 
-    "! @testing Y_ARGS
+    "! @testing Y_ARG
     METHODS ECHO_withoutParameter FOR TESTING.
 
-    "! @testing Y_ARGS
-    METHODS ECHO_withParameter FOR TESTING.
+    "! @testing Y_ARG
+    METHODS ECHO_withInput FOR TESTING.
 
-    "! @testing Y_ARGS
-    METHODS ECHO_input_uppercase FOR TESTING.
+    "! @testing Y_ARG
+    METHODS CAL_withInput_MM_YYYY FOR TESTING.
 
 ENDCLASS.
 
@@ -26,27 +26,22 @@ ENDCLASS.
 CLASS y_argparser_test IMPLEMENTATION.
 
   METHOD ECHO_withoutParameter.
-    DATA(arg) = NEW y_args( ).
+    DATA(arg) = NEW y_arg( ).
+    arg->add_command( `echo` ).
 
-    DATA(value) = arg->main( `echo TestEcho` ).
-
-    cl_abap_unit_assert=>assert_equals( exp = `TestEcho` act = value ).
+    cl_abap_unit_assert=>assert_equals( exp = |{ sy-datlo DATE = USER } - { sy-uzeit TIME = USER }| act = arg->main( `echo` ) ).
   ENDMETHOD.
 
-  METHOD echo_input_uppercase.
-    DATA(arg) = NEW y_args( ).
+  METHOD ECHO_withInput.
+    DATA(arg) = NEW y_arg( ).
 
-    DATA(value) = arg->main( `echo TestEcho --uppercase` ).
-
-    cl_abap_unit_assert=>assert_equals( exp = `TESTECHO` act = value ).
+    cl_abap_unit_assert=>assert_equals( exp = |TestOutput| act = arg->main( `echo TestOutput` ) ).
   ENDMETHOD.
 
-  METHOD ECHO_withParameter.
-    DATA(arg) = NEW y_args( ).
+  METHOD CAL_withInput_MM_YYYY.
+    DATA(arg) = NEW y_arg( ).
 
-    DATA(value) = arg->main( `echo` ).
-
-    cl_abap_unit_assert=>assert_equals( exp = |{ sy-datum DATE = USER } - { sy-uzeit TIME = USER }| act = value ).
+    cl_abap_unit_assert=>assert_equals( exp = |Februar 2014| act = arg->main( `cal 2 2014` ) ).
   ENDMETHOD.
 
 ENDCLASS.
