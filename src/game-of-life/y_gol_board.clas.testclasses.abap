@@ -15,6 +15,7 @@ CLASS test_board DEFINITION FINAL FOR TESTING
     METHODS cell_should_be_death           FOR TESTING.
     METHODS cell_should_be_alive           FOR TESTING.
     METHODS shouldBeThreeLivingNeigbhors   FOR TESTING.
+    METHODS shouldBeOneLivingNeigbhors     FOR TESTING.
 
 ENDCLASS.
 
@@ -84,6 +85,13 @@ CLASS test_board IMPLEMENTATION.
     board->comes_alive( row = 3 column = 3 ).
 
     cl_abap_unit_assert=>assert_equals( exp = 3 act = board->get_number_of_living_neighbors( row = 2 column = 2 ) ).
+  ENDMETHOD.
+
+  METHOD shouldbeonelivingneigbhors.
+    board->comes_alive( row = 2 column = 2 ).
+    board->comes_alive( row = 3 column = 2 ).
+
+    cl_abap_unit_assert=>assert_equals( exp = 1 act = board->get_number_of_living_neighbors( row = 1 column = 1 ) ).
   ENDMETHOD.
 
 ENDCLASS.

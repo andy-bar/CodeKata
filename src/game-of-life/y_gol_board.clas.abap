@@ -82,28 +82,36 @@ CLASS y_gol_board IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_number_of_living_neighbors.
-    DATA(row_count)    = row - 2.
+    DATA(row_index) = row - 1.
 
-    DO 3 TIMES.
-      row_count += 1.
+    WHILE row_index <= row + 1.
 
-      DATA(column_count) = column - 2.
+      IF row_index = 0 OR row_index >= row_end.
+        row_index += 1.
+        CONTINUE.
+      ENDIF.
 
-      DO 3 TIMES.
-        column_count += 1.
-
-        DATA(row_index)     = ( ( row + row_count ) MOD row_end ).
-        DATA(column_index)  = ( ( column + column_count ) MOD column_end ).
-
-        IF NOT row_index = 0 AND NOT column_index = 0.
-          DATA(tmp) = COND #( WHEN me->board[ row = row_index column = column_index ]-alive = abap_true THEN 1
-                              ELSE 0
-                            ).
-          result += tmp.
+      DATA(col_index) = column - 1.
+      WHILE col_index <= column + 1.
+        IF row_index = row AND col_index = column.
+          col_index += 1.
+          CONTINUE.
         ENDIF.
 
-      ENDDO.
-    ENDDO.
+        IF col_index = 0 OR col_index > column_end.
+          col_index += 1.
+          CONTINUE.
+        ENDIF.
+
+        IF me->board[ row = row_index column = col_index ]-alive = abap_true.
+          result += 1.
+        ENDIF.
+
+        col_index += 1.
+      ENDWHILE.
+
+      row_index += 1.
+    ENDWHILE.
   ENDMETHOD.
 
   METHOD create_dead_board.
