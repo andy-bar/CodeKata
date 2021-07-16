@@ -5,7 +5,7 @@
    <VSEOCLASS>
     <CLSNAME>Y_GOL_BOARD</CLSNAME>
     <LANGU>D</LANGU>
-    <DESCRIPT>Game of Life Board</DESCRIPT>
+    <DESCRIPT>Game of Life - Board</DESCRIPT>
     <STATE>1</STATE>
     <CLSCCINCL>X</CLSCCINCL>
     <FIXPT>X</FIXPT>

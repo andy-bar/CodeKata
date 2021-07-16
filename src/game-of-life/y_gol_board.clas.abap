@@ -1,38 +1,34 @@
-"! <p class="shorttext synchronized">Game of Life Board</p>
+"! <p class="shorttext synchronized">Game of Life - Board</p>
 CLASS y_gol_board DEFINITION
   PUBLIC
   CREATE PUBLIC.
 
   PUBLIC SECTION.
     METHODS constructor
-      IMPORTING row    TYPE i OPTIONAL
-                column TYPE i OPTIONAL.
+      IMPORTING row TYPE i
+                col TYPE i.
 
-    METHODS is_death
+    METHODS is_exists
       IMPORTING row           TYPE i
-                column        TYPE i
-      RETURNING VALUE(result) TYPE abap_bool
-      RAISING   cx_sy_itab_line_not_found.
+                col           TYPE i
+      RETURNING VALUE(result) TYPE abap_bool.
 
-    METHODS is_alive
-      IMPORTING row           TYPE i
-                column        TYPE i
-      RETURNING VALUE(result) TYPE abap_bool
-      RAISING   cx_sy_itab_line_not_found.
+    METHODS come_alive
+      IMPORTING row TYPE i
+                col TYPE i.
 
-    METHODS comes_dead
-      IMPORTING row    TYPE i
-                column TYPE i
-      RAISING   cx_sy_itab_line_not_found.
-
-    METHODS comes_alive
-      IMPORTING row    TYPE i
-                column TYPE i
-      RAISING   cx_sy_itab_line_not_found.
+    METHODS become_dead
+      IMPORTING row TYPE i
+                col TYPE i.
 
     METHODS get_number_of_living_neighbors
       IMPORTING row           TYPE i
-                column        TYPE i
+                col           TYPE i
+      RETURNING VALUE(result) TYPE i.
+
+    METHODS get_number_of_dead_neighbors
+      IMPORTING row           TYPE i
+                col           TYPE i
       RETURNING VALUE(result) TYPE i.
 
   PROTECTED SECTION.
@@ -45,13 +41,18 @@ CLASS y_gol_board DEFINITION
     TYPES END OF t_board.
     TYPES tt_board TYPE HASHED TABLE OF t_board WITH UNIQUE KEY row column.
 
-    DATA board      TYPE tt_board.
-    DATA row_end    TYPE i.
-    DATA column_end TYPE i.
+    DATA board   TYPE tt_board.
+    DATA row_end TYPE i.
+    DATA col_end TYPE i.
 
-    METHODS create_dead_board
-      IMPORTING row    TYPE i
-                column TYPE i.
+    METHODS create_initial_board
+      IMPORTING row TYPE i
+                col TYPE i.
+
+    METHODS provide_neighbors
+      IMPORTING row           TYPE i
+                col           TYPE i
+      RETURNING VALUE(result) TYPE tt_board.
 
 ENDCLASS.
 
@@ -59,69 +60,77 @@ ENDCLASS.
 CLASS y_gol_board IMPLEMENTATION.
 
   METHOD constructor.
-    me->row_end    = row.
-    me->column_end = column.
-
-    create_dead_board( row = row column = column ).
+    me->row_end = row.
+    me->col_end = col.
+    create_initial_board( row = row col = col ).
   ENDMETHOD.
 
-  METHOD is_death.
-    result = xsdbool( me->board[ row = row column = column ]-alive = abap_false ).
+  METHOD create_initial_board.
+    DO row TIMES.
+      DATA(row_index) = sy-index.
+      DO col TIMES.
+        DATA(col_index) = sy-index.
+
+        INSERT VALUE t_board( row = row_index column = col_index ) INTO TABLE board.
+
+      ENDDO.
+    ENDDO.
   ENDMETHOD.
 
-  METHOD is_alive.
-    result = me->board[ row = row column = column ]-alive.
+  METHOD is_exists.
+    result = xsdbool( line_exists( board[ row = row column = col ] ) ).
   ENDMETHOD.
 
-  METHOD comes_dead.
-    me->board[ row = row column = column ]-alive = abap_false.
+  METHOD come_alive.
+    me->board[ row = row column = col ]-alive = abap_true.
   ENDMETHOD.
 
-  METHOD comes_alive.
-    me->board[ row = row column = column ]-alive = abap_true.
+  METHOD become_dead.
+    me->board[ row = row column = col ]-alive = abap_false.
   ENDMETHOD.
 
   METHOD get_number_of_living_neighbors.
-    DATA(row_index) = row - 1.
+    LOOP AT provide_neighbors( row = row col = col ) REFERENCE INTO DATA(neighbor)
+     WHERE alive = abap_true.
+      result += 1.
+    ENDLOOP.
+  ENDMETHOD.
 
+  METHOD get_number_of_dead_neighbors.
+    LOOP AT provide_neighbors( row = row col = col ) REFERENCE INTO DATA(neighbor)
+     WHERE alive = abap_false.
+      result += 1.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD provide_neighbors.
+    DATA(row_index) = row - 1.
     WHILE row_index <= row + 1.
 
-      IF row_index = 0 OR row_index >= row_end.
+      IF row_index = 0 OR row_index > row_end.
         row_index += 1.
         CONTINUE.
       ENDIF.
 
-      DATA(col_index) = column - 1.
-      WHILE col_index <= column + 1.
-        IF row_index = row AND col_index = column.
+      DATA(col_index) = col - 1.
+      WHILE col_index <= col + 1.
+        IF row_index = row AND col_index = col.
           col_index += 1.
           CONTINUE.
         ENDIF.
 
-        IF col_index = 0 OR col_index > column_end.
+        IF col_index = 0 OR col_index > col_end.
           col_index += 1.
           CONTINUE.
         ENDIF.
 
-        IF me->board[ row = row_index column = col_index ]-alive = abap_true.
-          result += 1.
-        ENDIF.
+        INSERT VALUE t_board( me->board[ row = row_index column = col_index ] ) INTO TABLE result.
 
         col_index += 1.
       ENDWHILE.
 
       row_index += 1.
     ENDWHILE.
-  ENDMETHOD.
-
-  METHOD create_dead_board.
-    DO row TIMES.
-      DATA(row_index) = sy-index.
-      DO column TIMES.
-        DATA(column_index) = sy-index.
-        INSERT VALUE #( row = row_index column = column_index ) INTO TABLE board.
-      ENDDO.
-    ENDDO.
   ENDMETHOD.
 
 ENDCLASS.
