@@ -13,7 +13,17 @@ CLASS y_gol_board DEFINITION
                 col           TYPE i
       RETURNING VALUE(result) TYPE abap_bool.
 
-    METHODS come_alive
+    METHODS is_alive
+      IMPORTING row           TYPE i
+                col           TYPE i
+      RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS is_dead
+      IMPORTING row           TYPE i
+                col           TYPE i
+      RETURNING VALUE(result) TYPE abap_bool.
+
+    METHODS become_alive
       IMPORTING row TYPE i
                 col TYPE i.
 
@@ -30,6 +40,9 @@ CLASS y_gol_board DEFINITION
       IMPORTING row           TYPE i
                 col           TYPE i
       RETURNING VALUE(result) TYPE i.
+
+    METHODS to_string
+      RETURNING VALUE(result) TYPE string.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
@@ -81,7 +94,15 @@ CLASS y_gol_board IMPLEMENTATION.
     result = xsdbool( line_exists( board[ row = row column = col ] ) ).
   ENDMETHOD.
 
-  METHOD come_alive.
+  METHOD is_alive.
+    result = board[ row = row column = col ]-alive.
+  ENDMETHOD.
+
+  METHOD is_dead.
+    result = xsdbool( board[ row = row column = col ]-alive = abap_false ).
+  ENDMETHOD.
+
+  METHOD become_alive.
     me->board[ row = row column = col ]-alive = abap_true.
   ENDMETHOD.
 
@@ -101,6 +122,28 @@ CLASS y_gol_board IMPLEMENTATION.
      WHERE alive = abap_false.
       result += 1.
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD to_string.
+    DO row_end TIMES.
+      DATA(row_index) = sy-index.
+
+      IF sy-index > 1.
+        result = result && cl_abap_char_utilities=>newline.
+      ENDIF.
+
+      DO col_end TIMES.
+        DATA(col_index) = sy-index.
+
+        IF board[ row = row_index column = col_index ]-alive = abap_true.
+          result = result && |+|.
+          CONTINUE.
+        ENDIF.
+
+        result = result && |-|.
+
+      ENDDO.
+    ENDDO.
   ENDMETHOD.
 
   METHOD provide_neighbors.

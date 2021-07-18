@@ -10,6 +10,10 @@ CLASS test_board DEFINITION FINAL FOR TESTING
     METHODS should_create_blank_board    FOR TESTING.
     METHODS should_create_3x3_board      FOR TESTING.
     METHODS cell_should_not_exist        FOR TESTING.
+    METHODS cell_should_is_alive         FOR TESTING.
+    METHODS cell_should_is_not_alive     FOR TESTING.
+    METHODS cell_should_is_dead          FOR TESTING.
+    METHODS cell_should_is_not_dead      FOR TESTING.
     METHODS cell_should_become_dead      FOR TESTING.
     METHODS shouldGive_8_LivingNeighbors FOR TESTING.
     METHODS shouldGive_3_LivingNeighbors FOR TESTING.
@@ -17,6 +21,7 @@ CLASS test_board DEFINITION FINAL FOR TESTING
     METHODS shouldGive_8_DeadNeighbors   FOR TESTING.
     METHODS shouldGive_3_DeadNeighbors   FOR TESTING.
     METHODS shouldGive_5_DeadNeighbors   FOR TESTING.
+    METHODS shouldOutput_grid_ToString   FOR TESTING.
 
 ENDCLASS.
 
@@ -56,12 +61,30 @@ CLASS test_board IMPLEMENTATION.
     cl_abap_unit_assert=>assert_false( board->is_exists( row = 3 col = 4 ) ).
   ENDMETHOD.
 
+  METHOD cell_should_is_alive.
+    board->become_alive( row = 2 col = 2 ).
+    cl_abap_unit_assert=>assert_true( board->is_alive( row = 2 col = 2 ) ).
+  ENDMETHOD.
+
+  METHOD cell_should_is_not_alive.
+    cl_abap_unit_assert=>assert_false( board->is_alive( row = 2 col = 2 ) ).
+  ENDMETHOD.
+
+  METHOD cell_should_is_dead.
+    cl_abap_unit_assert=>assert_true( board->is_dead( row = 2 col = 2 ) ).
+  ENDMETHOD.
+
+  METHOD cell_should_is_not_dead.
+    board->become_alive( row = 2 col = 2 ).
+    cl_abap_unit_assert=>assert_false( board->is_dead( row = 2 col = 2 ) ).
+  ENDMETHOD.
+
   METHOD cell_should_become_dead.
     DO 3 TIMES.
       DATA(row) = sy-index.
       DO 3 TIMES.
         DATA(col) = sy-index.
-        board->come_alive( row = row col = col ).
+        board->become_alive( row = row col = col ).
       ENDDO.
     ENDDO.
 
@@ -77,7 +100,7 @@ CLASS test_board IMPLEMENTATION.
       DATA(row) = sy-index.
       DO 3 TIMES.
         DATA(col) = sy-index.
-        board->come_alive( row = row col = col ).
+        board->become_alive( row = row col = col ).
       ENDDO.
     ENDDO.
 
@@ -89,7 +112,7 @@ CLASS test_board IMPLEMENTATION.
       DATA(row) = sy-index.
       DO 3 TIMES.
         DATA(col) = sy-index.
-        board->come_alive( row = row col = col ).
+        board->become_alive( row = row col = col ).
       ENDDO.
     ENDDO.
 
@@ -101,7 +124,7 @@ CLASS test_board IMPLEMENTATION.
       DATA(row) = sy-index.
       DO 3 TIMES.
         DATA(col) = sy-index.
-        board->come_alive( row = row col = col ).
+        board->become_alive( row = row col = col ).
       ENDDO.
     ENDDO.
 
@@ -118,6 +141,19 @@ CLASS test_board IMPLEMENTATION.
 
   METHOD shouldGive_5_DeadNeighbors.
     cl_abap_unit_assert=>assert_equals( exp = 5 act = board->get_number_of_dead_neighbors( row = 3 col = 2 ) ).
+  ENDMETHOD.
+
+  METHOD shouldOutput_grid_ToString.
+    board->become_alive( row = 2 col = 3 ).
+    board->become_alive( row = 3 col = 2 ).
+    board->become_alive( row = 3 col = 3 ).
+
+    cl_abap_unit_assert=>assert_equals(
+        exp = |---| && cl_abap_char_utilities=>newline &&
+              |--+| && cl_abap_char_utilities=>newline &&
+              |-++|
+        act = board->to_string( )
+    ).
   ENDMETHOD.
 
 ENDCLASS.
