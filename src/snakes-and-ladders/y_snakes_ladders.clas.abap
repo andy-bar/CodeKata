@@ -4,20 +4,24 @@ CLASS y_snakes_ladders DEFINITION
 
   PUBLIC SECTION.
     METHODS play
-      IMPORTING die1          TYPE i
-                die2          TYPE i
+      IMPORTING square1       TYPE i
+                square2       TYPE i
       RETURNING VALUE(result) TYPE string.
 
   PROTECTED SECTION.
   PRIVATE SECTION.
-    TYPES BEGIN OF map_of_snake_and_ladder.
-    TYPES:
-      field TYPE i,
-      go_to TYPE i.
-    TYPES END OF map_of_snake_and_ladder.
-    TYPES map_of_snakes_and_ladders TYPE HASHED TABLE OF map_of_snake_and_ladder WITH UNIQUE KEY field.
+    DATA player_1    TYPE i.
+    DATA player_2    TYPE i.
+    DATA next_player TYPE i.
 
-    DATA player_1_square TYPE i.
+    METHODS move_to_do
+      IMPORTING square          TYPE i
+      RETURNING VALUE(r_result) TYPE string.
+
+    METHODS is_double
+      IMPORTING square1       TYPE i
+                square2       TYPE i
+      RETURNING VALUE(result) TYPE abap_bool.
 
 ENDCLASS.
 
@@ -26,21 +30,36 @@ ENDCLASS.
 CLASS y_snakes_ladders IMPLEMENTATION.
 
   METHOD play.
-    DATA snakes_and_ladders TYPE map_of_snakes_and_ladders.
-    snakes_and_ladders = VALUE #(
-        ( field = 2  go_to = 38 )
-        ( field = 64 go_to = 60 )
-    ).
+    DATA(square) = square1 + square2.
 
-    DATA(dice_score) = die1 + die2.
-
-    player_1_square += dice_score.
-
-    IF line_exists( snakes_and_ladders[ field = player_1_square ] ).
-      player_1_square = snakes_and_ladders[ field = player_1_square ]-go_to.
+    IF player_1 = 0.
+      next_player = 1.
     ENDIF.
 
-    result = |Player 1 is on square { player_1_square }|.
+    result = move_to_do( square ).
+
+    IF is_double( square1 = square1 square2 = square2 ).
+      RETURN.
+    ENDIF.
+
+    IF next_player = 1.
+      next_player = 2.
+    ELSE.
+      next_player = 1.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD is_double.
+    result = xsdbool( square1 = square2 ).
+  ENDMETHOD.
+
+  METHOD move_to_do.
+    DATA(player_x) = |player_{ next_player }|.
+    ASSIGN me->(player_x) TO FIELD-SYMBOL(<player>).
+
+    <player> += square.
+
+    r_result = |Player { next_player  } is on square { <player> }|.
   ENDMETHOD.
 
 ENDCLASS.
