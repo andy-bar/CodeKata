@@ -20,31 +20,43 @@ CLASS y_snakes_ladders DEFINITION
     TYPES snakes_and_ladders TYPE HASHED TABLE OF snake_and_ladder WITH UNIQUE KEY field.
 
     DATA list_snakes_ladders TYPE snakes_and_ladders.
-    DATA player_1            TYPE i.
-    DATA player_2            TYPE i.
-    DATA next_player         TYPE i VALUE 1.
+    DATA players             TYPE REF TO if_object_map.
+    DATA next_player         TYPE REF TO y_sl_player.
 
-    METHODS calculate_player_score
-      IMPORTING square1       TYPE i
-                square2       TYPE i
-      RETURNING VALUE(result) TYPE i.
+    METHODS setup_game_board.
+    METHODS create_players.
+    METHODS set_starting_player.
 
-    METHODS get_next_player
+    METHODS toggle
       IMPORTING square1 TYPE i
                 square2 TYPE i.
-
-    METHODS get_current_player_score
-      RETURNING VALUE(result) TYPE i.
-
-
 ENDCLASS.
-
 
 
 CLASS y_snakes_ladders IMPLEMENTATION.
 
   METHOD constructor.
-    list_snakes_ladders = VALUE #(
+    setup_game_board( ).
+    create_players( ).
+    set_starting_player( ).
+  ENDMETHOD.
+
+  METHOD play.
+    toggle( square1 = square1 square2 = square2 ).
+
+    DATA(square) = square1 + square2.
+
+    next_player->change_score( next_player->score( ) + square ).
+
+    IF line_exists( list_snakes_ladders[ field = next_player->score( ) ] ).
+      next_player->change_score( list_snakes_ladders[ field = next_player->score( ) ]-go_to ).
+    ENDIF.
+
+    result = |Player { next_player->id( ) } is on square { next_player->score( ) }|.
+  ENDMETHOD.
+
+  METHOD setup_game_board.
+    me->list_snakes_ladders = VALUE #(
         ( field = 2  go_to = 38 )
         ( field = 7  go_to = 14 )
         ( field = 8  go_to = 31 )
@@ -69,41 +81,26 @@ CLASS y_snakes_ladders IMPLEMENTATION.
     ).
   ENDMETHOD.
 
-  METHOD play.
-    calculate_player_score( square1 = square1 square2 = square2 ).
+  METHOD create_players.
+    DATA(players) = NEW cl_object_map( ).
 
-    result = |Player { next_player } is on square { get_current_player_score( ) }|.
+    players->put( key = 1 value = NEW y_sl_player( 1 ) ).
+    players->put( key = 2 value = NEW y_sl_player( 2 ) ).
 
-    get_next_player( square1 = square1 square2 = square2 ).
+    me->players = players.
   ENDMETHOD.
 
-  METHOD calculate_player_score.
-    DATA(player_x) = |player_{ next_player }|.
-    ASSIGN me->(player_x) TO FIELD-SYMBOL(<player>) CASTING TYPE i.
-
-    DATA(square) = square1 + square2.
-    <player> += square.
-
-    IF line_exists( list_snakes_ladders[ field = <player> ] ).
-      <player> = list_snakes_ladders[ field = <player> ]-go_to.
-    ENDIF.
+  METHOD set_starting_player.
+    next_player ?= players->get( 1 ).
   ENDMETHOD.
 
-  METHOD get_next_player.
+  METHOD toggle.
     IF square1 <> square2.
-      IF next_player = 1.
-        next_player = 2.
+      IF next_player->id( ) = 1.
+        next_player ?= players->get( 2 ).
       ELSE.
-        next_player = 1.
+        next_player ?= players->get( 1 ).
       ENDIF.
-    ENDIF.
-  ENDMETHOD.
-
-  METHOD get_current_player_score.
-    DATA(player_x) = |player_{ next_player }|.
-    ASSIGN me->(player_x) TO FIELD-SYMBOL(<player>) CASTING TYPE i.
-    IF <player> IS ASSIGNED.
-      result = <player>.
     ENDIF.
   ENDMETHOD.
 
