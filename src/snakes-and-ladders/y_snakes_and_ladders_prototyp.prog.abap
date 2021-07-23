@@ -10,9 +10,16 @@ CLASS sl_player DEFINITION CREATE PUBLIC.
     METHODS id
       RETURNING VALUE(id) TYPE i.
 
+    METHODS score
+      RETURNING VALUE(result) TYPE i.
+
+    METHODS change_score
+      IMPORTING score TYPE i.
+
   PROTECTED SECTION.
   PRIVATE SECTION.
-    DATA me_id TYPE i.
+    DATA me_id    TYPE i.
+    DATA me_score TYPE i.
 
 ENDCLASS.
 CLASS sl_player IMPLEMENTATION.
@@ -23,6 +30,14 @@ CLASS sl_player IMPLEMENTATION.
 
   METHOD id.
     id = me_id.
+  ENDMETHOD.
+
+  METHOD score.
+    result = me_score.
+  ENDMETHOD.
+
+  METHOD change_score.
+    me_score = score.
   ENDMETHOD.
 
 ENDCLASS.
@@ -124,7 +139,8 @@ CLASS sl_players_collection_iterator IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD if_object_collection_iterator~has_next.
-
+    DATA(player) = CAST sl_player( collection->if_object_collection~get( next_player ) ).
+    has_next = xsdbool( player->score( ) < 100 ).
   ENDMETHOD.
 
 ENDCLASS.
@@ -174,6 +190,7 @@ CLASS test_snakes_ladders DEFINITION FINAL FOR TESTING
     METHODS setup.
 
     METHODS player_ID_1_should_be_created FOR TESTING.
+    METHODS player_score_should_record_10 FOR TESTING.
     METHODS two_players_should_in_map     FOR TESTING.
     METHODS should_return_players_as_coll FOR TESTING.
     METHODS should_provide_iterator       FOR TESTING.
@@ -198,6 +215,13 @@ CLASS test_snakes_ladders IMPLEMENTATION.
     cl_abap_unit_assert=>assert_equals( exp = 1 act = player->id( ) ).
   ENDMETHOD.
 
+  METHOD player_score_should_record_10.
+    DATA(player) = NEW sl_player( 1 ).
+    player->change_score( 10 ).
+
+    cl_abap_unit_assert=>assert_equals( exp = 10 act = player->score( ) ).
+  ENDMETHOD.
+
   METHOD two_players_should_in_map.
     cl_abap_unit_assert=>assert_equals( exp = 1 act = CAST sl_player( players->get( 1 ) )->id( ) ).
     cl_abap_unit_assert=>assert_equals( exp = 2 act = CAST sl_player( players->get( 2 ) )->id( ) ).
@@ -217,31 +241,29 @@ CLASS test_snakes_ladders IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD should_switch_between_players.
-    DATA(iterator) = players->get_values_iterator( ).
+    DATA(player_iterator) = players->get_values_iterator( ).
 
-    DATA(player) = CAST sl_player( iterator->get_next( ) ).
+    DATA(dice_1) = 0.
+    DATA(dice_2) = 6.
+    DATA(exp_player) = 1.
 
-    cl_abap_unit_assert=>assert_equals( msg = `Should return: Iteration 1 Player 1`
-        exp = 1 act = player->id( )
-    ).
+    WHILE player_iterator->has_next( ).
+      DATA(player) = CAST sl_player( player_iterator->get_next( ) ).
 
-    player ?= iterator->get_next( ).
+      DATA(dice) = ( dice_1 + sy-index ) + dice_2.
 
-    cl_abap_unit_assert=>assert_equals( msg = `Should return: Iteration 2 Player 2`
-        exp = 2 act = player->id( )
-    ).
+      player->change_score( player->score( ) + dice ).
 
-    player ?= iterator->get_next( ).
+      cl_abap_unit_assert=>assert_equals( msg = |Should return: Iteration { sy-index } Player { player->id( ) }|
+          exp = exp_player act = player->id( )
+      ).
 
-    cl_abap_unit_assert=>assert_equals( msg = `Should return: Iteration 3 Player 1`
-        exp = 1 act = player->id( )
-    ).
-
-    player ?= iterator->get_next( ).
-
-    cl_abap_unit_assert=>assert_equals( msg = `Should return: Iteration 4 Player 2`
-        exp = 2 act = player->id( )
-    ).
+      IF exp_player = 1.
+        exp_player += 1.
+      ELSE.
+        exp_player -= 1.
+      ENDIF.
+    ENDWHILE.
   ENDMETHOD.
 
 ENDCLASS.
